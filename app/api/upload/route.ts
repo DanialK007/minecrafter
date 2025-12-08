@@ -2,9 +2,9 @@ import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
 
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME!,
-  api_key: process.env.CLOUD_KEY!,
-  api_secret: process.env.CLOUD_SECRET!,
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_KEY,
+  api_secret: process.env.CLOUD_SECRET,
 });
 
 export async function POST(req: Request) {
@@ -16,11 +16,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // Convert File → Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary with upload_stream
     const result = await new Promise((resolve, reject) => {
       const upload = cloudinary.uploader.upload_stream(
         { folder: "uploads" },
@@ -29,12 +27,17 @@ export async function POST(req: Request) {
           else resolve(result);
         }
       );
-
       upload.end(buffer);
     });
 
     return NextResponse.json(result);
-  } catch (err) {
-    return NextResponse.json({ error: "Upload failed", details: err });
+  } catch (err: any) {
+    return NextResponse.json(
+      {
+        error: "Upload failed",
+        reason: err?.message || String(err),
+      },
+      { status: 500 }
+    );
   }
 }
