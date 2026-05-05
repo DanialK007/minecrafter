@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import type { Photo } from "@/components/Gallery";
 import { IoClose } from "react-icons/io5";
 import { FiTrash2 } from "react-icons/fi";
-import { LuLayoutGrid, LuColumns2, LuColumns3, LuColumns4 } from "react-icons/lu";
+import {
+  LuLayoutGrid,
+  LuColumns2,
+  LuColumns3,
+  LuColumns4,
+} from "react-icons/lu";
 
 export default function RecentUploads({
   photos,
@@ -27,7 +32,7 @@ export default function RecentUploads({
     const idx = url.indexOf(marker);
     if (idx === -1) return url;
     return `${url.slice(0, idx + marker.length)}${transform}/${url.slice(
-      idx + marker.length
+      idx + marker.length,
     )}`;
   };
 
@@ -114,7 +119,7 @@ function Gallery({
 
   const shuffled = useMemo(
     () => [...photos].sort(() => Math.random() - 0.5),
-    [photos]
+    [photos],
   );
 
   const gridColsClass =
@@ -200,39 +205,57 @@ function Gallery({
               Mosaic
             </button>
 
-            <div className="flex gap-2">
+            <div className="flex justify-center gap-2">
               <button
                 type="button"
-                className={`h-11 px-4 rounded-full border border-white/40 shadow-sm transition active:scale-95 ${
+                className={`size-10 flex items-center justify-center bg-neutral-200 rounded-full border border-white/40 shadow-sm transition active:scale-95 ${
                   gap === 2
-                    ? "bg-neutral-900 text-white"
-                    : "bg-white/70 text-neutral-800 hover:bg-white/90"
+                    ? "invert"
+                    : ""
                 }`}
                 onClick={() => setGap(2)}
               >
-                Tight
+                <div className="size-4">
+                  <img
+                    src="img/tight.svg"
+                    alt="loose"
+                    className="block size-4"
+                  />
+                </div>
               </button>
               <button
                 type="button"
-                className={`h-11 px-4 rounded-full border border-white/40 shadow-sm transition active:scale-95 ${
+                className={`size-10 flex items-center justify-center bg-neutral-200 rounded-full border border-white/40 shadow-sm transition active:scale-95 ${
                   gap === 3
-                    ? "bg-neutral-900 text-white"
-                    : "bg-white/70 text-neutral-800 hover:bg-white/90"
+                    ? "invert"
+                    : ""
                 }`}
                 onClick={() => setGap(3)}
               >
-                Med
+                <div className="size-4">
+                  <img
+                    src="img/medium.svg"
+                    alt="loose"
+                    className="block size-4"
+                  />
+                </div>
               </button>
               <button
                 type="button"
-                className={`h-11 px-4 rounded-full border border-white/40 shadow-sm transition active:scale-95 ${
+                className={`size-10 flex items-center justify-center bg-neutral-200 rounded-full border border-white/40 shadow-sm transition active:scale-95 ${
                   gap === 4
-                    ? "bg-neutral-900 text-white"
-                    : "bg-white/70 text-neutral-800 hover:bg-white/90"
+                    ? "invert"
+                    : ""
                 }`}
                 onClick={() => setGap(4)}
               >
-                Loose
+                <div className="size-4">
+                  <img
+                    src="img/loose.svg"
+                    alt="loose"
+                    className="block size-4"
+                  />
+                </div>
               </button>
             </div>
           </div>
@@ -310,10 +333,12 @@ function Gallery({
                       await fetch("/api/delete-photo", {
                         method: "DELETE",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ publicId: activePhoto.publicId }),
+                        body: JSON.stringify({
+                          publicId: activePhoto.publicId,
+                        }),
                       });
                       setPhotos((prev) =>
-                        prev.filter((p) => p.publicId !== activePhoto.publicId)
+                        prev.filter((p) => p.publicId !== activePhoto.publicId),
                       );
                       setActivePhoto(null);
                     } finally {
@@ -354,4 +379,3 @@ function Gallery({
     </>
   );
 }
-
