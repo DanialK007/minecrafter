@@ -2,11 +2,14 @@
 import React, { useState } from "react";
 import { IoClose } from "react-icons/io5";
 import UploadImage from "@/components/UploadImage";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 function Model() {
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [model, setModel] = useState<boolean>(false);
   const [showUpload, setShowUpload] = useState<boolean>(false);
+  usePathname();
 
   return (
     <>
@@ -41,26 +44,28 @@ function Model() {
           onClick={(e) => e.stopPropagation()}
           className="flex flex-col items-end text-black space-y-3"
         >
-          <a
-            href="#"
+          <Link
+            href="/"
             className={`h-11 duration-500 hover:scale-105 flex items-center justify-center rounded-full bg-white ${
               model && !showUpload
                 ? "w-32 delay-200"
                 : "-translate-y-14 delay-0 blur-lg translate-x-1 w-11 scale-50 text-xs"
             }`}
+            onClick={() => setModel(false)}
           >
-            Main Page
-          </a>
-          <a
-            href="#"
+            Home
+          </Link>
+          <Link
+            href="/gallery"
             className={`h-11 duration-500 delay-100 hover:scale-105 flex items-center justify-center rounded-full bg-white ${
               model && !showUpload
                 ? "w-24"
                 : "-translate-y-28 blur-lg translate-x-1 w-11 scale-50 text-xs"
             }`}
+            onClick={() => setModel(false)}
           >
             Gallery
-          </a>
+          </Link>
           <button
             onClick={() => setShowUpload(true)}
             className={`h-11 duration-500 hover:scale-105 cursor-pointer flex items-center justify-center rounded-full bg-white ${

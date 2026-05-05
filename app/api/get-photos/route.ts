@@ -16,12 +16,18 @@ export async function GET() {
       sort_by: [{ public_id: "desc" }], // newest first
     });
 
-    const urls = result.resources.map(
-      (r: { secure_url: string }) => r.secure_url
+    const photos = result.resources.map(
+      (r: { secure_url: string; public_id: string }) => ({
+        url: r.secure_url,
+        publicId: r.public_id,
+      })
     );
-    
-    return NextResponse.json({ urls });
+
+    return NextResponse.json({ photos });
   } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch photos", details: err }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch photos", details: err },
+      { status: 500 }
+    );
   }
 }

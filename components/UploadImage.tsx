@@ -9,41 +9,45 @@ interface UploadImageProps {
 
 export default function UploadImage({ onUpload }: UploadImageProps) {
   const [urls, setUrls] = useState<string[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  async function upload(file: File) {
-    const form = new FormData();
-    form.append("file", file);
+  async function upload(files: File[]) {
+    const list = files.filter((f) => f.type.startsWith("image/"));
+    if (!list.length) return;
 
     setIsUploading(true);
 
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: form,
-      });
+      const results = await Promise.allSettled(
+        list.map(async (file) => {
+          const form = new FormData();
+          form.append("file", file);
+          const res = await fetch("/api/upload", { method: "POST", body: form });
+          const data = await res.json();
+          const fallbackUrl =
+            data?.secure_url ||
+            data?.url ||
+            (data?.data && (data.data.secure_url || data.data.url));
+          return fallbackUrl as string | null;
+        })
+      );
 
-      const data = await res.json();
-      console.log("Upload response:", data);
+      const newUrls = results
+        .filter(
+          (r): r is PromiseFulfilledResult<string | null> =>
+            r.status === "fulfilled"
+        )
+        .map((r) => r.value)
+        .filter((u): u is string => Boolean(u));
 
-      const fallbackUrl =
-        data.secure_url ||
-        data.url ||
-        (data?.data && (data.data.secure_url || data.data.url));
+      if (!newUrls.length) return;
 
-      if (!fallbackUrl) {
-        console.error("No URL returned from Cloudinary", data);
-        setIsUploading(false);
-        return;
-      }
-
-      const updatedUrls = [...urls, fallbackUrl];
+      const updatedUrls = [...urls, ...newUrls];
       setUrls(updatedUrls);
-      setUploadedUrl(fallbackUrl);
+      setUploadedUrl(newUrls[newUrls.length - 1]);
 
-      // Call parent callback asynchronously and reload page
       setTimeout(() => {
         onUpload(updatedUrls);
         window.location.reload();
@@ -56,22 +60,21 @@ export default function UploadImage({ onUpload }: UploadImageProps) {
   }
 
   function resetCard() {
-    setSelectedFile(null);
+    setSelectedFiles([]);
     setUploadedUrl(null);
     setIsUploading(false);
   }
 
   return (
     <div className="w-full mx-auto p-3 rounded-4xl shadow-lg bg-white">
-      {!selectedFile && !uploadedUrl && (
+      {!selectedFiles.length && !uploadedUrl && (
         <div className="space-y-3 relative">
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                setSelectedFile(e.dataTransfer.files[0]);
-              }
+              if (!e.dataTransfer.files?.length) return;
+              setSelectedFiles(Array.from(e.dataTransfer.files));
             }}
             className="flex flex-col items-center justify-center text-center aspect-video bg-neutral-200 text-neutral-600 font-medium p-4 rounded-3xl border-2 border-dashed border-neutral-400 hover:border-neutral-600 transition cursor-pointer"
           >
@@ -82,28 +85,30 @@ export default function UploadImage({ onUpload }: UploadImageProps) {
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
-                onChange={(e) => setSelectedFile(e.target.files![0])}
+                onChange={(e) =>
+                  setSelectedFiles(Array.from(e.target.files || []))
+                }
               />
             </label>
           </div>
         </div>
       )}
 
-      {selectedFile && !uploadedUrl && (
+      {selectedFiles.length > 0 && !uploadedUrl && (
         <div className="space-y-3">
           <div
             className="relative w-full aspect-video rounded-3xl overflow-hidden group"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                setSelectedFile(e.dataTransfer.files[0]);
-              }
+              if (!e.dataTransfer.files?.length) return;
+              setSelectedFiles(Array.from(e.dataTransfer.files));
             }}
           >
             <img
-              src={URL.createObjectURL(selectedFile)}
+              src={URL.createObjectURL(selectedFiles[0])}
               alt="Preview"
               className="w-full h-full object-cover"
             />
@@ -113,14 +118,17 @@ export default function UploadImage({ onUpload }: UploadImageProps) {
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
-                onChange={(e) => setSelectedFile(e.target.files![0])}
+                onChange={(e) =>
+                  setSelectedFiles(Array.from(e.target.files || []))
+                }
               />
             </label>
           </div>
           <button
             className="w-full py-2.5 cursor-pointer bg-neutral-700 text-white rounded-full flex items-center justify-center space-x-2 hover:bg-neutral-800"
-            onClick={() => upload(selectedFile)}
+            onClick={() => upload(selectedFiles)}
             disabled={isUploading}
           >
             {isUploading ? (
@@ -147,7 +155,13 @@ export default function UploadImage({ onUpload }: UploadImageProps) {
             ) : (
               <BiUpload className="text-xl" />
             )}
-            <span>{isUploading ? "Uploading…" : "Upload Now"}</span>
+            <span>
+              {isUploading
+                ? "Uploading…"
+                : `Upload ${selectedFiles.length} Photo${
+                    selectedFiles.length === 1 ? "" : "s"
+                  }`}
+            </span>
           </button>
         </div>
       )}
